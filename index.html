@@ -1047,8 +1047,8 @@
   function onRouletteStop() {
     const n   = SEGMENTS.length;
     const arc = (2 * Math.PI) / n;
-    // Pointer is at top (−π/2). Find which segment it falls on.
-    const normalized = ((-rouletteAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    // Pointer is at top (−π/2). Offset must be included in normalization.
+    const normalized = (((-Math.PI / 2 - rouletteAngle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
     const idx = Math.floor(normalized / arc) % n;
     const seg = SEGMENTS[idx];
 
@@ -1061,9 +1061,13 @@
     setTimeout(async () => {
       closeRoulette();
       try {
-        const data  = await fetchRandom(seg.query);
+        // /search is more reliable than /random for category filtering
+        const data  = await fetchSearch(seg.query);
         const items = data.results || [];
-        if (items.length > 0) openModal(gifObjFromData(items[0]));
+        if (items.length > 0) {
+          const pick = items[Math.floor(Math.random() * items.length)];
+          openModal(gifObjFromData(pick));
+        }
       } catch (e) {
         showToast('⚠️ 랜덤 실패. 다시 시도해주세요.');
       }
