@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GIF Finder 🎭</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --surface3: #2e2e2e;
+      --border: #333;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --accent: #a855f7;
+      --accent2: #7c3aed;
+      --accent-glow: rgba(168, 85, 247, 0.3);
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,13,13,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      gap: 8px;
+    }
+    .search-box input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface3); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .fav-count {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    /* ── Tabs ── */
+    .tabs-wrap {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-wrap::-webkit-scrollbar { display: none; }
+    .tabs {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 4px;
+      padding: 10px 24px;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab:hover { background: var(--surface2); color: var(--text); }
+    .tab.active {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(168,85,247,0.4);
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* ── Section title ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Grid ── */
+    .gif-grid {
+      columns: 5;
+      column-gap: 12px;
+    }
+    @media (max-width: 1200px) { .gif-grid { columns: 4; } }
+    @media (max-width: 900px)  { .gif-grid { columns: 3; } }
+    @media (max-width: 600px)  { .gif-grid { columns: 2; } }
+
+    .gif-card {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
+      group: true;
+    }
+    .gif-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      border-color: var(--accent);
+    }
+    .gif-card img {
+      width: 100%;
+      display: block;
+      border-radius: 12px 12px 0 0;
+      background: var(--surface2);
+      min-height: 80px;
+    }
+    .gif-card-actions {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      gap: 6px;
+      flex-direction: column;
+    }
+    .gif-card:hover .gif-card-actions { display: flex; }
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      backdrop-filter: blur(4px);
+      transition: all 0.15s;
+    }
+    .action-btn:hover { background: var(--accent); transform: scale(1.1); }
+    .action-btn.faved { background: var(--danger); }
+    .gif-title {
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Loading / Empty ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 80px 0;
+      color: var(--text-muted);
+    }
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty {
+      text-align: center;
+      padding: 80px 0;
+      color: var(--text-muted);
+    }
+    .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      z-index: 9999;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #modal-overlay.open { display: flex; }
+    #modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 520px;
+      width: 90%;
+      padding: 24px;
+      position: relative;
+    }
+    #modal img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    #modal-title {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      word-break: break-all;
+    }
+    #modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .modal-close:hover { background: var(--danger); }
+
+    /* ── Favorites panel ── */
+    #fav-panel {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 320px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 150;
+      flex-direction: column;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.5);
+    }
+    #fav-panel.open { display: flex; }
+    .fav-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+    .fav-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: start;
+    }
+    .fav-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .fav-item img { width: 100%; display: block; }
+    .fav-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .fav-item:hover .fav-remove { display: flex; }
+    .fav-empty {
+      grid-column: span 2;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 40px 0;
+    }
+
+    /* ── Load more ── */
+    .load-more-wrap { text-align: center; margin-top: 32px; }
+
+    /* ── Random banner ── */
+    .random-banner {
+      background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.1));
+      border: 1px solid rgba(168,85,247,0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .random-banner span { flex: 1; font-size: 0.9rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-inner">
+    <div class="logo" onclick="goHome()">GIF Finder 🎭</div>
+    <div class="search-box">
+      <input id="search-input" type="text" placeholder="GIF 검색... (예: 웃음, 놀람, 축하)" />
+      <button class="btn btn-primary" onclick="doSearch()">🔍 검색</button>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="getRandomGif()">🎲 랜덤</button>
+      <button class="btn btn-ghost" onclick="toggleFavPanel()">
+        ❤️ 즐겨찾기 <span class="fav-count" id="fav-count">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Category Tabs ── -->
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-query="" onclick="selectTab(this,'','트렌딩')">🔥 트렌딩</button>
+    <button class="tab" data-query="funny laugh" onclick="selectTab(this,'funny laugh','웃김')">🤣 웃김</button>
+    <button class="tab" data-query="shocked surprised" onclick="selectTab(this,'shocked surprised','놀람')">😱 놀람</button>
+    <button class="tab" data-query="sad crying" onclick="selectTab(this,'sad crying','슬픔')">😢 슬픔</button>
+    <button class="tab" data-query="happy excited" onclick="selectTab(this,'happy excited','기쁨')">🎉 기쁨</button>
+    <button class="tab" data-query="angry mad" onclick="selectTab(this,'angry mad','화남')">😤 화남</button>
+    <button class="tab" data-query="tired sleepy" onclick="selectTab(this,'tired sleepy','피곤')">😴 피곤</button>
+    <button class="tab" data-query="thinking" onclick="selectTab(this,'thinking','생각중')">🤔 생각중</button>
+    <button class="tab" data-query="fighting cheer" onclick="selectTab(this,'fighting cheer','파이팅')">💪 파이팅</button>
+    <button class="tab" data-query="clapping applause" onclick="selectTab(this,'clapping applause','칭찬')">👏 칭찬</button>
+    <button class="tab" data-query="annoyed frustrated" onclick="selectTab(this,'annoyed frustrated','짜증')">😒 짜증</button>
+    <button class="tab" data-query="love heart" onclick="selectTab(this,'love heart','사랑')">💕 사랑</button>
+    <button class="tab" data-query="dance party" onclick="selectTab(this,'dance party','댄스')">💃 댄스</button>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<main>
+  <!-- Random banner -->
+  <div class="random-banner">
+    <span>🎲 오늘 어떤 GIF 찾고 계세요? 랜덤 추천으로 재밌는 GIF를 발견해보세요!</span>
+    <button class="btn btn-primary" onclick="getRandomGif()">랜덤 뽑기</button>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">
+      <span id="section-emoji">🔥</span>
+      <span id="section-label">트렌딩</span>
+      <span class="badge" id="result-count"></span>
+    </div>
+  </div>
+
+  <div id="gif-grid" class="gif-grid"></div>
+  <div id="loader" class="loader" style="display:none;">
+    <div class="spinner"></div> <span>불러오는 중...</span>
+  </div>
+  <div id="empty" class="empty" style="display:none;">
+    <div class="icon">🔍</div>
+    <div>검색 결과가 없어요.</div>
+  </div>
+  <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+    <button class="btn btn-ghost" onclick="loadMore()">더 보기 ↓</button>
+  </div>
+</main>
+
+<!-- ── Favorites Panel ── -->
+<div id="fav-panel">
+  <div class="fav-header">
+    <span>❤️ 즐겨찾기</span>
+    <button class="modal-close" onclick="toggleFavPanel()">✕</button>
+  </div>
+  <div class="fav-grid" id="fav-grid"></div>
+</div>
+
+<!-- ── Modal ── -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <img id="modal-img" src="" alt="" />
+    <div id="modal-title"></div>
+    <div id="modal-actions">
+      <button class="btn btn-primary" onclick="copyUrl()">🔗 URL 복사</button>
+      <button class="btn btn-ghost" onclick="downloadGif()">⬇️ 다운로드</button>
+      <button class="btn btn-ghost" id="modal-fav-btn" onclick="toggleFavFromModal()">❤️ 즐겨찾기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast"></div>
+
+<script>
+  const API_KEY = 'LIVDSRZULELA'; // Tenor public dev key
+  const BASE = 'https://api.tenor.com/v1';
+  const LIMIT = 20;
+
+  let currentQuery = '';
+  let nextCursor = '';   // Tenor uses cursor-based pagination
+  let currentLabel = '트렌딩';
+  let currentEmoji = '🔥';
+  let loading = false;
+  let hasMore = false;
+  let modalGif = null;
+
+  // ── Favorites (localStorage) ──
+  let favorites = JSON.parse(localStorage.getItem('gif_favs') || '[]');
+
+  function saveFavs() {
+    localStorage.setItem('gif_favs', JSON.stringify(favorites));
+    document.getElementById('fav-count').textContent = favorites.length;
+  }
+
+  function isFaved(id) { return favorites.some(f => f.id === id); }
+
+  function toggleFav(gif) {
+    const idx = favorites.findIndex(f => f.id === gif.id);
+    if (idx === -1) {
+      favorites.unshift(gif);
+      showToast('❤️ 즐겨찾기에 추가됐어요!');
+    } else {
+      favorites.splice(idx, 1);
+      showToast('🗑️ 즐겨찾기에서 제거됐어요.');
+    }
+    saveFavs();
+    renderFavPanel();
+  }
+
+  function renderFavPanel() {
+    const grid = document.getElementById('fav-grid');
+    if (favorites.length === 0) {
+      grid.innerHTML = '<div class="fav-empty">저장된 GIF가 없어요</div>';
+      return;
+    }
+    grid.innerHTML = favorites.map(g => `
+      <div class="fav-item" onclick="openModal(${JSON.stringify(g).replace(/"/g,"&quot;")})">
+        <img src="${g.preview}" alt="${g.title}" loading="lazy" />
+        <button class="fav-remove" onclick="event.stopPropagation(); removeFav('${g.id}')">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function removeFav(id) {
+    favorites = favorites.filter(f => f.id !== id);
+    saveFavs();
+    renderFavPanel();
+    showToast('🗑️ 즐겨찾기에서 제거됐어요.');
+  }
+
+  function toggleFavPanel() {
+    const p = document.getElementById('fav-panel');
+    p.classList.toggle('open');
+    if (p.classList.contains('open')) renderFavPanel();
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ── API helpers (Tenor v1) ──
+  async function fetchTrending(pos = '') {
+    const url = `${BASE}/trending?key=${API_KEY}&limit=${LIMIT}&media_filter=minimal&contentfilter=medium${pos ? '&pos=' + pos : ''}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function fetchSearch(q, pos = '') {
+    const url = `${BASE}/search?key=${API_KEY}&q=${encodeURIComponent(q)}&limit=${LIMIT}&media_filter=minimal&contentfilter=medium${pos ? '&pos=' + pos : ''}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function fetchRandom(tag = '') {
+    const q = tag || 'funny';
+    const url = `${BASE}/random?key=${API_KEY}&q=${encodeURIComponent(q)}&limit=1&media_filter=minimal&contentfilter=medium`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  // ── GIF card builder (Tenor format) ──
+  function gifObjFromData(d) {
+    const media = d.media && d.media[0] ? d.media[0] : {};
+    const gif = media.gif || media.mediumgif || media.tinygif || {};
+    const preview = media.tinygif || media.nanogif || media.gif || {};
+    return {
+      id: d.id,
+      title: d.title || d.content_description || 'GIF',
+      url: gif.url || '',
+      preview: preview.url || gif.url || '',
+      width: gif.dims ? gif.dims[0] : 200,
+      height: gif.dims ? gif.dims[1] : 200,
+    };
+  }
+
+  function renderCard(gif) {
+    const faved = isFaved(gif.id);
+    return `
+      <div class="gif-card" id="card-${gif.id}" onclick="openModal(${JSON.stringify(gif).replace(/"/g, '&quot;')})">
+        <img src="${gif.preview}" alt="${gif.title}" loading="lazy" />
+        <div class="gif-card-actions">
+          <button class="action-btn ${faved ? 'faved' : ''}" title="즐겨찾기"
+            onclick="event.stopPropagation(); toggleFavCard(${JSON.stringify(gif).replace(/"/g, '&quot;')}, this)">
+            ${faved ? '💔' : '❤️'}
+          </button>
+          <button class="action-btn" title="URL 복사"
+            onclick="event.stopPropagation(); copyUrlDirect('${gif.url}')">
+            🔗
+          </button>
+        </div>
+        <div class="gif-title">${gif.title}</div>
+      </div>`;
+  }
+
+  function toggleFavCard(gif, btn) {
+    toggleFav(gif);
+    const f = isFaved(gif.id);
+    btn.textContent = f ? '💔' : '❤️';
+    btn.classList.toggle('faved', f);
+  }
+
+  // ── Render list (Tenor) ──
+  let renderedCount = 0;
+  function renderGifs(data, append = false) {
+    const grid = document.getElementById('gif-grid');
+    const items = data.results || [];
+
+    nextCursor = data.next || '';
+    hasMore = !!nextCursor && items.length === LIMIT;
+
+    if (!append) { grid.innerHTML = ''; renderedCount = 0; }
+
+    if (items.length === 0 && !append) {
+      document.getElementById('empty').style.display = 'block';
+      document.getElementById('load-more-wrap').style.display = 'none';
+      document.getElementById('result-count').textContent = '';
+      return;
+    }
+
+    document.getElementById('empty').style.display = 'none';
+    items.forEach(d => {
+      const gif = gifObjFromData(d);
+      if (gif.url) grid.insertAdjacentHTML('beforeend', renderCard(gif));
+    });
+
+    renderedCount += items.length;
+    document.getElementById('result-count').textContent = `${renderedCount}개 표시 중`;
+    document.getElementById('load-more-wrap').style.display = hasMore ? 'block' : 'none';
+  }
+
+  // ── Load ──
+  async function load(append = false) {
+    if (loading) return;
+    loading = true;
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('load-more-wrap').style.display = 'none';
+
+    try {
+      const pos = append ? nextCursor : '';
+      let data;
+      if (!currentQuery) {
+        data = await fetchTrending(pos);
+      } else {
+        data = await fetchSearch(currentQuery, pos);
+      }
+      if (!append) nextCursor = '';
+      renderGifs(data, append);
+    } catch (e) {
+      showToast('⚠️ 불러오기 실패. 잠시 후 다시 시도해주세요.');
+    } finally {
+      document.getElementById('loader').style.display = 'none';
+      loading = false;
+    }
+  }
+
+  function loadMore() { load(true); }
+
+  // ── Search ──
+  function doSearch() {
+    const q = document.getElementById('search-input').value.trim();
+    if (!q) return;
+    currentQuery = q;
+    nextCursor = '';
+    document.getElementById('section-label').textContent = `"${q}" 검색 결과`;
+    document.getElementById('section-emoji').textContent = '🔍';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    load();
+  }
+
+  // ── Tabs ──
+  function selectTab(el, query, label) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentQuery = query;
+    nextCursor = '';
+    currentLabel = label;
+    document.getElementById('section-label').textContent = label;
+    document.getElementById('section-emoji').textContent = el.textContent.trim().charAt(0);
+    document.getElementById('search-input').value = '';
+    load();
+  }
+
+  // ── Random ──
+  async function getRandomGif() {
+    const tag = document.getElementById('search-input').value.trim() || currentQuery || 'funny';
+    try {
+      const data = await fetchRandom(tag);
+      const items = data.results || [];
+      if (items.length > 0) {
+        const gif = gifObjFromData(items[0]);
+        openModal(gif);
+      }
+    } catch (e) {
+      showToast('⚠️ 랜덤 실패. 다시 시도해주세요.');
+    }
+  }
+
+  // ── Modal ──
+  function openModal(gif) {
+    if (typeof gif === 'string') gif = JSON.parse(gif);
+    modalGif = gif;
+    document.getElementById('modal-img').src = gif.url;
+    document.getElementById('modal-title').textContent = gif.title;
+    const favBtn = document.getElementById('modal-fav-btn');
+    favBtn.textContent = isFaved(gif.id) ? '💔 즐겨찾기 해제' : '❤️ 즐겨찾기';
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal(e) {
+    if (!e || e.target === document.getElementById('modal-overlay')) {
+      document.getElementById('modal-overlay').classList.remove('open');
+      document.getElementById('modal-img').src = '';
+      modalGif = null;
+    }
+  }
+
+  function toggleFavFromModal() {
+    if (!modalGif) return;
+    toggleFav(modalGif);
+    const favBtn = document.getElementById('modal-fav-btn');
+    favBtn.textContent = isFaved(modalGif.id) ? '💔 즐겨찾기 해제' : '❤️ 즐겨찾기';
+    // update card if visible
+    const card = document.getElementById('card-' + modalGif.id);
+    if (card) {
+      const btn = card.querySelector('.action-btn');
+      if (btn) {
+        const f = isFaved(modalGif.id);
+        btn.textContent = f ? '💔' : '❤️';
+        btn.classList.toggle('faved', f);
+      }
+    }
+  }
+
+  // ── Copy / Download ──
+  function copyUrl() {
+    if (!modalGif) return;
+    navigator.clipboard.writeText(modalGif.url).then(() => showToast('🔗 URL이 복사됐어요!'));
+  }
+
+  function copyUrlDirect(url) {
+    navigator.clipboard.writeText(url).then(() => showToast('🔗 URL이 복사됐어요!'));
+  }
+
+  function downloadGif() {
+    if (!modalGif) return;
+    const a = document.createElement('a');
+    a.href = modalGif.url;
+    a.download = (modalGif.title || 'gif') + '.gif';
+    a.target = '_blank';
+    a.click();
+    showToast('⬇️ 다운로드를 시작했어요!');
+  }
+
+  // ── Home ──
+  function goHome() {
+    document.getElementById('search-input').value = '';
+    currentQuery = '';
+    nextCursor = '';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.tab[data-query=""]').classList.add('active');
+    document.getElementById('section-label').textContent = '트렌딩';
+    document.getElementById('section-emoji').textContent = '🔥';
+    load();
+  }
+
+  // ── Keyboard ──
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal();
+      document.getElementById('fav-panel').classList.remove('open');
+    }
+  });
+
+  // ── Init ──
+  document.getElementById('fav-count').textContent = favorites.length;
+  load();
+</script>
+</body>
+</html>
