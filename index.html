@@ -692,8 +692,7 @@
       <button class="btn btn-ghost" id="modal-fav-btn" onclick="toggleFavFromModal()">❤️ 즐겨찾기</button>
     </div>
     <div id="similar-section">
-      <button class="btn btn-ghost" id="similar-btn" onclick="findSimilar()" style="width:100%;justify-content:center;margin-bottom:12px;">🔍 비슷한 GIF 찾기</button>
-      <div class="similar-label" style="display:none;" id="similar-label">비슷한 GIF</div>
+      <div class="similar-label">비슷한 GIF</div>
       <div id="similar-loader">불러오는 중...</div>
       <div id="similar-grid"></div>
     </div>
@@ -1143,12 +1142,10 @@
     document.getElementById('modal-title').textContent = gif.title;
     const favBtn = document.getElementById('modal-fav-btn');
     favBtn.textContent = isFaved(gif.id) ? '💔 즐겨찾기 해제' : '❤️ 즐겨찾기';
-    // reset similar section
-    document.getElementById('similar-btn').style.display = '';
-    document.getElementById('similar-label').style.display = 'none';
     document.getElementById('similar-grid').innerHTML = '';
     document.getElementById('similar-loader').classList.remove('show');
     document.getElementById('modal-overlay').classList.add('open');
+    findSimilar();
   }
 
   async function findSimilar() {
@@ -1157,11 +1154,8 @@
     const grid = document.getElementById('similar-grid');
     const loader = document.getElementById('similar-loader');
 
-    section.classList.add('open');
     grid.innerHTML = '';
     loader.classList.add('show');
-    document.getElementById('similar-btn').style.display = 'none';
-    document.getElementById('similar-label').style.display = 'block';
 
     try {
       const query = modalGif.title && modalGif.title !== 'GIF'
