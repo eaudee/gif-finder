@@ -430,6 +430,38 @@
     }
     .random-banner span { flex: 1; font-size: 0.9rem; color: var(--text-muted); }
 
+    /* ── Random button shine + pulse ── */
+    .btn-random {
+      position: relative;
+      overflow: hidden;
+      animation: random-pulse 2.4s ease-in-out infinite;
+    }
+    .btn-random::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255,255,255,0.55) 50%,
+        transparent 100%
+      );
+      animation: light-sweep 2.4s ease-in-out infinite;
+      border-radius: inherit;
+    }
+    @keyframes light-sweep {
+      0%   { left: -75%; }
+      50%  { left: 130%; }
+      100% { left: 130%; }
+    }
+    @keyframes random-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.5); }
+      40%       { box-shadow: 0 0 0 7px rgba(168,85,247,0); }
+    }
+
     /* ── Roulette overlay ── */
     #roulette-overlay {
       display: none;
@@ -543,7 +575,7 @@
       <button class="btn btn-primary" onclick="doSearch()">🔍 검색</button>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost" onclick="getRandomGif()">🎲 랜덤</button>
+      <button class="btn btn-ghost btn-random" onclick="getRandomGif()">🎲 랜덤</button>
       <button class="btn btn-ghost" onclick="toggleFavPanel()">
         ❤️ 즐겨찾기 <span class="fav-count" id="fav-count">0</span>
       </button>
@@ -575,7 +607,7 @@
   <!-- Random banner -->
   <div class="random-banner">
     <span>🎲 오늘 어떤 GIF 찾고 계세요? 랜덤 추천으로 재밌는 GIF를 발견해보세요!</span>
-    <button class="btn btn-primary" onclick="getRandomGif()">랜덤 뽑기</button>
+    <button class="btn btn-primary btn-random" onclick="getRandomGif()">랜덤 뽑기</button>
   </div>
 
   <div class="section-header">
@@ -1139,7 +1171,6 @@
   // ── Init ──
   document.getElementById('fav-count').textContent = favorites.length;
   load();
-  openRoulette();
 </script>
 </body>
 </html>
