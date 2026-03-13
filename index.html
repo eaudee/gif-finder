@@ -350,6 +350,48 @@
     }
     .modal-close:hover { background: var(--danger); }
 
+    /* ── Similar GIFs ── */
+    #similar-section {
+      display: none;
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    #similar-section.open { display: block; }
+    .similar-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    #similar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .similar-item {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      background: var(--surface2);
+    }
+    .similar-item:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .similar-item img { width: 100%; display: block; aspect-ratio: 1; object-fit: cover; }
+    #similar-loader {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 16px 0;
+      display: none;
+    }
+    #similar-loader.show { display: block; }
+
     /* ── Favorites panel ── */
     #fav-panel {
       display: none;
@@ -649,6 +691,12 @@
       <button class="btn btn-primary" onclick="copyUrl()">🔗 URL 복사</button>
       <button class="btn btn-ghost" onclick="downloadGif()">⬇️ 다운로드</button>
       <button class="btn btn-ghost" id="modal-fav-btn" onclick="toggleFavFromModal()">❤️ 즐겨찾기</button>
+      <button class="btn btn-ghost" onclick="findSimilar()">🔍 비슷한 GIF</button>
+    </div>
+    <div id="similar-section">
+      <div class="similar-label">비슷한 GIF</div>
+      <div id="similar-loader">불러오는 중...</div>
+      <div id="similar-grid"></div>
     </div>
   </div>
 </div>
@@ -1096,7 +1144,46 @@
     document.getElementById('modal-title').textContent = gif.title;
     const favBtn = document.getElementById('modal-fav-btn');
     favBtn.textContent = isFaved(gif.id) ? '💔 즐겨찾기 해제' : '❤️ 즐겨찾기';
+    // reset similar section
+    document.getElementById('similar-section').classList.remove('open');
+    document.getElementById('similar-grid').innerHTML = '';
+    document.getElementById('similar-loader').classList.remove('show');
     document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  async function findSimilar() {
+    if (!modalGif) return;
+    const section = document.getElementById('similar-section');
+    const grid = document.getElementById('similar-grid');
+    const loader = document.getElementById('similar-loader');
+
+    section.classList.add('open');
+    grid.innerHTML = '';
+    loader.classList.add('show');
+
+    try {
+      const query = modalGif.title && modalGif.title !== 'GIF'
+        ? modalGif.title
+        : (currentQuery || 'funny');
+      const url = `${BASE}/search?key=${API_KEY}&q=${encodeURIComponent(query)}&limit=8&media_filter=minimal&contentfilter=medium`;
+      const data = await (await fetch(url)).json();
+      const items = (data.results || []).filter(d => d.id !== modalGif.id).slice(0, 4);
+
+      loader.classList.remove('show');
+      if (items.length === 0) {
+        grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">비슷한 GIF를 찾지 못했어요.</div>';
+        return;
+      }
+      grid.innerHTML = items.map(d => {
+        const g = gifObjFromData(d);
+        return `<div class="similar-item" onclick="openModal(${JSON.stringify(g).replace(/"/g,'&quot;')})">
+          <img src="${g.preview}" alt="${g.title}" loading="lazy" />
+        </div>`;
+      }).join('');
+    } catch (e) {
+      loader.classList.remove('show');
+      grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">불러오기 실패.</div>';
+    }
   }
 
   function closeModal(e) {
