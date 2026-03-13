@@ -429,6 +429,107 @@
       margin-bottom: 28px;
     }
     .random-banner span { flex: 1; font-size: 0.9rem; color: var(--text-muted); }
+
+    /* ── Roulette overlay ── */
+    #roulette-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+    #roulette-overlay.open { display: flex; }
+    #roulette-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px 28px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      min-width: 340px;
+    }
+    #roulette-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .roulette-pointer-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .roulette-pointer {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 22px solid #a855f7;
+      filter: drop-shadow(0 2px 6px rgba(168,85,247,0.8));
+      z-index: 10;
+    }
+    #roulette-canvas {
+      display: block;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px #a855f7, 0 0 32px rgba(168,85,247,0.4);
+    }
+    #roulette-result {
+      margin-top: 18px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      min-height: 2rem;
+      opacity: 0;
+      transition: opacity 0.4s;
+      color: var(--text);
+    }
+    #roulette-spin-btn {
+      margin-top: 18px;
+      padding: 12px 36px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    #roulette-spin-btn:hover { opacity: 0.9; transform: scale(1.03); }
+    #roulette-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #roulette-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #roulette-close:hover { background: var(--danger); }
+
+    /* ── Confetti canvas ── */
+    #confetti-canvas {
+      display: none;
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 400;
+    }
   </style>
 </head>
 <body>
@@ -520,6 +621,23 @@
     </div>
   </div>
 </div>
+
+<!-- ── Roulette Overlay ── -->
+<div id="roulette-overlay">
+  <div id="roulette-box">
+    <button id="roulette-close" onclick="closeRoulette()">✕</button>
+    <div id="roulette-title">🎲 랜덤 뽑기</div>
+    <div class="roulette-pointer-wrap">
+      <div class="roulette-pointer"></div>
+      <canvas id="roulette-canvas" width="280" height="280"></canvas>
+    </div>
+    <div id="roulette-result"></div>
+    <button id="roulette-spin-btn" onclick="spinRoulette()">돌리기!</button>
+  </div>
+</div>
+
+<!-- ── Confetti Canvas ── -->
+<canvas id="confetti-canvas"></canvas>
 
 <!-- ── Toast ── -->
 <div id="toast"></div>
@@ -739,19 +857,204 @@
     load();
   }
 
-  // ── Random ──
-  async function getRandomGif() {
-    const tag = document.getElementById('search-input').value.trim() || currentQuery || 'funny';
-    try {
-      const data = await fetchRandom(tag);
-      const items = data.results || [];
-      if (items.length > 0) {
-        const gif = gifObjFromData(items[0]);
-        openModal(gif);
-      }
-    } catch (e) {
-      showToast('⚠️ 랜덤 실패. 다시 시도해주세요.');
+  // ── Random → opens roulette ──
+  function getRandomGif() {
+    openRoulette();
+  }
+
+  // ── Roulette ──
+  const SEGMENTS = [
+    { label: '웃김',   emoji: '🤣', query: 'funny laugh',         color: '#f59e0b' },
+    { label: '놀람',   emoji: '😱', query: 'shocked surprised',   color: '#ef4444' },
+    { label: '슬픔',   emoji: '😢', query: 'sad crying',          color: '#60a5fa' },
+    { label: '기쁨',   emoji: '🎉', query: 'happy excited',       color: '#4ade80' },
+    { label: '화남',   emoji: '😤', query: 'angry mad',           color: '#fb923c' },
+    { label: '피곤',   emoji: '😴', query: 'tired sleepy',        color: '#c084fc' },
+    { label: '사랑',   emoji: '💕', query: 'love heart',          color: '#f472b6' },
+    { label: '댄스',   emoji: '💃', query: 'dance party',         color: '#34d399' },
+  ];
+  let rouletteAngle = 0;
+  let rouletteSpinning = false;
+  let rouletteAnimId = null;
+
+  function openRoulette() {
+    document.getElementById('roulette-result').style.opacity = '0';
+    document.getElementById('roulette-result').textContent = '';
+    document.getElementById('roulette-spin-btn').disabled = false;
+    document.getElementById('roulette-overlay').classList.add('open');
+    drawWheel(rouletteAngle);
+  }
+
+  function closeRoulette() {
+    document.getElementById('roulette-overlay').classList.remove('open');
+    if (rouletteAnimId) cancelAnimationFrame(rouletteAnimId);
+    rouletteSpinning = false;
+  }
+
+  function drawWheel(angle) {
+    const canvas = document.getElementById('roulette-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(W, H) / 2 - 6;
+    const n = SEGMENTS.length;
+    const arc = (2 * Math.PI) / n;
+
+    ctx.clearRect(0, 0, W, H);
+
+    for (let i = 0; i < n; i++) {
+      const startA = angle + i * arc;
+      const endA   = startA + arc;
+
+      // Segment
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, startA, endA);
+      ctx.closePath();
+      ctx.fillStyle = SEGMENTS[i].color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Label
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(startA + arc / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(SEGMENTS[i].emoji + ' ' + SEGMENTS[i].label, R - 10, 5);
+      ctx.restore();
     }
+
+    // Center cap
+    ctx.beginPath();
+    ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fill();
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  function spinRoulette() {
+    if (rouletteSpinning) return;
+    rouletteSpinning = true;
+    document.getElementById('roulette-spin-btn').disabled = true;
+    document.getElementById('roulette-result').style.opacity = '0';
+
+    const spinAmount = (Math.random() * 4 + 7) * 2 * Math.PI; // 7-11 rotations
+    const duration  = 3200;
+    const startAngle = rouletteAngle;
+    const startTime  = performance.now();
+
+    function animate(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 4); // ease-out quart
+      rouletteAngle = startAngle + spinAmount * eased;
+      drawWheel(rouletteAngle);
+
+      if (t < 1) {
+        rouletteAnimId = requestAnimationFrame(animate);
+      } else {
+        rouletteSpinning = false;
+        onRouletteStop();
+      }
+    }
+    rouletteAnimId = requestAnimationFrame(animate);
+  }
+
+  function onRouletteStop() {
+    const n   = SEGMENTS.length;
+    const arc = (2 * Math.PI) / n;
+    // Pointer is at top (−π/2). Find which segment it falls on.
+    const normalized = ((-rouletteAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const idx = Math.floor(normalized / arc) % n;
+    const seg = SEGMENTS[idx];
+
+    const resultEl = document.getElementById('roulette-result');
+    resultEl.textContent = seg.emoji + ' ' + seg.label + '!';
+    resultEl.style.opacity = '1';
+
+    launchConfetti();
+
+    setTimeout(async () => {
+      closeRoulette();
+      try {
+        const data  = await fetchRandom(seg.query);
+        const items = data.results || [];
+        if (items.length > 0) openModal(gifObjFromData(items[0]));
+      } catch (e) {
+        showToast('⚠️ 랜덤 실패. 다시 시도해주세요.');
+      }
+    }, 2200);
+  }
+
+  // ── Confetti ──
+  const CONFETTI_COLORS = ['#a855f7','#ec4899','#f59e0b','#22c55e','#3b82f6','#f87171','#fb923c','#fff'];
+
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.display = 'block';
+
+    const cx = window.innerWidth  / 2;
+    const cy = window.innerHeight / 2;
+
+    const particles = Array.from({ length: 160 }, () => {
+      const angle = Math.random() * 2 * Math.PI;
+      const speed = Math.random() * 10 + 4;
+      return {
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 6,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        w: Math.random() * 10 + 4,
+        h: Math.random() * 5  + 3,
+        rot: Math.random() * 360,
+        rotV: (Math.random() - 0.5) * 12,
+        life: 1,
+        decay: Math.random() * 0.012 + 0.012,
+        shape: Math.random() > 0.4 ? 'rect' : 'circle',
+      };
+    });
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+      particles.forEach(p => {
+        if (p.life <= 0) return;
+        alive = true;
+        p.x   += p.vx;
+        p.y   += p.vy;
+        p.vy  += 0.3;
+        p.vx  *= 0.98;
+        p.rot += p.rotV;
+        p.life -= p.decay;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        if (p.shape === 'rect') {
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+      if (alive) requestAnimationFrame(loop);
+      else canvas.style.display = 'none';
+    }
+    requestAnimationFrame(loop);
   }
 
   // ── Modal ──
