@@ -429,99 +429,6 @@
       margin-bottom: 28px;
     }
     .random-banner span { flex: 1; font-size: 0.9rem; color: var(--text-muted); }
-
-    /* ── Layout: Sidebar + Content ── */
-    .layout {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      gap: 0;
-      align-items: flex-start;
-    }
-
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 200px;
-      min-width: 200px;
-      padding: 24px 16px;
-      position: sticky;
-      top: 112px; /* header + tabs height */
-      max-height: calc(100vh - 112px);
-      overflow-y: auto;
-      scrollbar-width: none;
-      border-right: 1px solid var(--border);
-    }
-    .sidebar::-webkit-scrollbar { display: none; }
-
-    .sidebar-search {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 12px;
-      margin-bottom: 20px;
-    }
-    .sidebar-search input {
-      background: none;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-size: 0.85rem;
-      width: 100%;
-    }
-    .sidebar-search input::placeholder { color: var(--text-muted); }
-    .sidebar-search .icon { color: var(--accent); font-size: 1rem; flex-shrink: 0; }
-
-    .sidebar-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-      padding-left: 2px;
-    }
-
-    .tag-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .tag-chip {
-      display: inline-flex;
-      align-items: center;
-      padding: 7px 14px;
-      border-radius: 20px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.18s;
-      white-space: nowrap;
-      font-style: italic;
-    }
-    .tag-chip:hover,
-    .tag-chip.active {
-      background: var(--accent-glow);
-      border-color: rgba(168,85,247,0.5);
-      color: var(--accent);
-    }
-
-    /* ── Content area ── */
-    .content {
-      flex: 1;
-      min-width: 0;
-      padding: 24px;
-    }
-
-    /* ── Responsive: hide sidebar on small screens ── */
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .content { padding: 16px; }
-    }
   </style>
 </head>
 <body>
@@ -562,71 +469,34 @@
   </div>
 </div>
 
-<!-- ── Layout ── -->
-<div class="layout">
+<!-- ── Main ── -->
+<main>
+  <!-- Random banner -->
+  <div class="random-banner">
+    <span>🎲 오늘 어떤 GIF 찾고 계세요? 랜덤 추천으로 재밌는 GIF를 발견해보세요!</span>
+    <button class="btn btn-primary" onclick="getRandomGif()">랜덤 뽑기</button>
+  </div>
 
-  <!-- ── Sidebar ── -->
-  <aside class="sidebar">
-    <div class="sidebar-search">
-      <span class="icon">🔍</span>
-      <input type="text" id="sidebar-search-input" placeholder="Search Reaction GIFs"
-        oninput="onSidebarInput(this.value)" onkeydown="if(event.key==='Enter') doSidebarSearch()" />
+  <div class="section-header">
+    <div class="section-title">
+      <span id="section-emoji">🔥</span>
+      <span id="section-label">트렌딩</span>
+      <span class="badge" id="result-count"></span>
     </div>
-    <div class="sidebar-label">추천 검색어</div>
-    <div class="tag-list" id="tag-list">
-      <button class="tag-chip" onclick="searchTag(this,'love')">#love</button>
-      <button class="tag-chip" onclick="searchTag(this,'thumbs up')">#thumbs up</button>
-      <button class="tag-chip" onclick="searchTag(this,'shrug')">#shrug</button>
-      <button class="tag-chip" onclick="searchTag(this,'no')">#no</button>
-      <button class="tag-chip" onclick="searchTag(this,'yes')">#yes</button>
-      <button class="tag-chip" onclick="searchTag(this,'bye')">#bye</button>
-      <button class="tag-chip" onclick="searchTag(this,'tired')">#tired</button>
-      <button class="tag-chip" onclick="searchTag(this,'mad')">#mad</button>
-      <button class="tag-chip" onclick="searchTag(this,'confused')">#confused</button>
-      <button class="tag-chip" onclick="searchTag(this,'interested')">#interested</button>
-      <button class="tag-chip" onclick="searchTag(this,'clap')">#clap</button>
-      <button class="tag-chip" onclick="searchTag(this,'cry')">#cry</button>
-      <button class="tag-chip" onclick="searchTag(this,'shocked')">#shocked</button>
-      <button class="tag-chip" onclick="searchTag(this,'happy')">#happy</button>
-      <button class="tag-chip" onclick="searchTag(this,'dance')">#dance</button>
-      <button class="tag-chip" onclick="searchTag(this,'awkward')">#awkward</button>
-      <button class="tag-chip" onclick="searchTag(this,'facepalm')">#facepalm</button>
-      <button class="tag-chip" onclick="searchTag(this,'excited')">#excited</button>
-      <button class="tag-chip" onclick="searchTag(this,'waiting')">#waiting</button>
-      <button class="tag-chip" onclick="searchTag(this,'seriously')">#seriously</button>
-    </div>
-  </aside>
+  </div>
 
-  <!-- ── Content ── -->
-  <main class="content">
-    <!-- Random banner -->
-    <div class="random-banner">
-      <span>🎲 오늘 어떤 GIF 찾고 계세요? 랜덤 추천으로 재밌는 GIF를 발견해보세요!</span>
-      <button class="btn btn-primary" onclick="getRandomGif()">랜덤 뽑기</button>
-    </div>
-
-    <div class="section-header">
-      <div class="section-title">
-        <span id="section-emoji">🔥</span>
-        <span id="section-label">트렌딩</span>
-        <span class="badge" id="result-count"></span>
-      </div>
-    </div>
-
-    <div id="gif-grid" class="gif-grid"></div>
-    <div id="loader" class="loader" style="display:none;">
-      <div class="spinner"></div> <span>불러오는 중...</span>
-    </div>
-    <div id="empty" class="empty" style="display:none;">
-      <div class="icon">🔍</div>
-      <div>검색 결과가 없어요.</div>
-    </div>
-    <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
-      <button class="btn btn-ghost" onclick="loadMore()">더 보기 ↓</button>
-    </div>
-  </main>
-
-</div>
+  <div id="gif-grid" class="gif-grid"></div>
+  <div id="loader" class="loader" style="display:none;">
+    <div class="spinner"></div> <span>불러오는 중...</span>
+  </div>
+  <div id="empty" class="empty" style="display:none;">
+    <div class="icon">🔍</div>
+    <div>검색 결과가 없어요.</div>
+  </div>
+  <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+    <button class="btn btn-ghost" onclick="loadMore()">더 보기 ↓</button>
+  </div>
+</main>
 
 <!-- ── Favorites Panel ── -->
 <div id="fav-panel">
@@ -949,44 +819,6 @@
     document.querySelector('.tab[data-query=""]').classList.add('active');
     document.getElementById('section-label').textContent = '트렌딩';
     document.getElementById('section-emoji').textContent = '🔥';
-    load();
-  }
-
-  // ── Sidebar tag search ──
-  function searchTag(el, query) {
-    document.querySelectorAll('.tag-chip').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    currentQuery = query;
-    nextCursor = '';
-    document.getElementById('section-label').textContent = '#' + query;
-    document.getElementById('section-emoji').textContent = '🏷️';
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('search-input').value = query;
-    document.getElementById('sidebar-search-input').value = '';
-    load();
-  }
-
-  function onSidebarInput(val) {
-    // filter tag chips in realtime
-    const v = val.toLowerCase();
-    document.querySelectorAll('.tag-chip').forEach(chip => {
-      chip.style.display = chip.textContent.toLowerCase().includes(v) ? '' : 'none';
-    });
-  }
-
-  function doSidebarSearch() {
-    const q = document.getElementById('sidebar-search-input').value.trim();
-    if (!q) return;
-    document.getElementById('search-input').value = q;
-    document.querySelectorAll('.tag-chip').forEach(t => {
-      t.classList.remove('active');
-      t.style.display = '';
-    });
-    currentQuery = q;
-    nextCursor = '';
-    document.getElementById('section-label').textContent = `"${q}" 검색 결과`;
-    document.getElementById('section-emoji').textContent = '🔍';
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     load();
   }
 
