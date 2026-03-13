@@ -38,6 +38,27 @@ cp index.html /tmp/gif-finder/index.html
 | `launchConfetti()` | 컨페티 폭죽 효과 |
 | `toggleFav()` | 즐겨찾기 추가/제거 |
 
+## 개발 방식: Test-Driven Development (TDD)
+
+새 기능을 추가하거나 버그를 수정할 때 반드시 TDD 사이클을 따른다.
+
+1. **Red** — 실패하는 테스트를 먼저 작성한다
+2. **Green** — 테스트를 통과시키는 최소한의 코드를 작성한다
+3. **Refactor** — 동작을 유지하면서 코드를 정리한다
+
+### 적용 규칙
+- 코드보다 테스트를 먼저 작성한다
+- 테스트가 없는 기능은 추가하지 않는다
+- 한 번에 하나의 테스트만 통과시킨다
+- 테스트는 `preview_snapshot` / `preview_eval` / `preview_click` 등 미리보기 도구로 검증한다
+
+### 예시 흐름
+```
+1. (Red)    새 기능 동작을 preview_eval로 검증하는 테스트 시나리오 작성
+2. (Green)  index.html에 최소 코드 추가 → 복사 → 미리보기 확인
+3. (Refactor) 코드 정리 후 동일 시나리오 재검증
+```
+
 ## 코드 수정 시 주의사항
 - `gifObjFromData(d)` — Tenor 응답에서 GIF 객체 생성, 포맷 변경 시 여기부터 확인
 - 즐겨찾기는 `localStorage('gif_favs')`에 저장
